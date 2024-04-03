@@ -1,0 +1,7 @@
+
+{
+    "description": "beomi/KoAlpaca-Polyglot-12.8B에서 사용하는 템플릿입니다.",
+    "prompt_input": "### 질문: {instruction}\n{input}\n\n### 답변:",
+    "prompt_no_input": "### 질문: {instruction}\n\n### 답변:",
+    "response_split": "### 답변:"
+}
