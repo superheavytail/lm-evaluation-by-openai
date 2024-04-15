@@ -120,7 +120,7 @@ def main(
                 res = model.generate(
                     item,
                     use_cache=True,
-                    max_new_tokens=1024-len(item[0]),
+                    max_new_tokens=min(2048-len(item[0]), 512),
                     eos_token_id=tokenizer.eos_token_id,
                     pad_token_id=tokenizer.pad_token_id,
                     do_sample=True,
