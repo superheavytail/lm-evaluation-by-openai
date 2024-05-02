@@ -70,3 +70,21 @@
 #--output_dir ./generated/ \
 #--model_type kullm3 \
 #--debug False
+
+# gemma_1.1_2b
+#python step1_generate_answers.py \
+#--model_name google/gemma-1.1-2b-it \
+#--save_name gemma_1_1_2b_it \
+#--eval_set_path res/user_oriented_instructions_eval.jsonl \
+#--output_dir ./generated/ \
+#--model_type gemma \
+#--debug False
+
+# gemma_1.1_7b
+#python step1_generate_answers.py \
+#--model_name google/gemma-1.1-7b-it \
+#--save_name gemma_1_1_7b_it \
+#--eval_set_path res/user_oriented_instructions_eval.jsonl \
+#--output_dir ./generated/ \
+#--model_type gemma \
+#--debug False

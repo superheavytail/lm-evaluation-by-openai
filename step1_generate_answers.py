@@ -50,9 +50,9 @@ def main(
         except KeyError:
             device = "cuda"
 
-        if model_type == 'kullm3':
+        if model_type in ['kullm3', 'gemma']:
             # system-prompted kullm3, use transformers pipeline
-            model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, attn_implementation='sdpa')
+            model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", attn_implementation='sdpa')
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=device, return_full_text=False,
                             do_sample=True, top_p=0.9, temperature=0.7)
