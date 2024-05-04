@@ -4,15 +4,15 @@ import jsonlines
 import json
 from pathlib import Path
 from itertools import count
+from fire import Fire
 
 
-SHARDED_FILE_NAME = "kullm3_prompted_smallkosbi_bsz32"
 OUTPUT_DIR = './generated'
 
 
-def main():
+def main(sharded_file_name: str):
     files = Path(OUTPUT_DIR)
-    files = files.glob(f'{SHARDED_FILE_NAME}*')
+    files = files.glob(f'{sharded_file_name}*')
     files = sorted(list(files), key=lambda x: x.stem)
 
     files_list = []
@@ -28,7 +28,7 @@ def main():
         except StopIteration:
             break
 
-    aggregated_output_file = (Path(OUTPUT_DIR) / SHARDED_FILE_NAME).with_suffix('.jsonl')
+    aggregated_output_file = (Path(OUTPUT_DIR) / sharded_file_name).with_suffix('.jsonl')
     with open(aggregated_output_file, "w", encoding="utf-8") as f:
         for e in aggregated_list:
             json.dump(e, f, ensure_ascii=False)
@@ -36,4 +36,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    Fire(main)
