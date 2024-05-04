@@ -29,6 +29,7 @@ def main(
     print("=== model name ===")
     print(model_name)
     print("===    ====    ===")
+    print(os.getcwd())
 
     # prepare evaluation set
     eval_set = [e for e in jsonlines.open(eval_set_path).iter()]
@@ -42,6 +43,8 @@ def main(
     else:
         # for multi-GPU inference
         try:
+            print(f"{os.environ['LOCAL_RANK']=}")
+            print(f"{os.environ['WORLD_SIZE']=}")
             local_rank = int(os.environ['LOCAL_RANK'])
             world_size = int(os.environ['WORLD_SIZE'])
             eval_set = eval_set[local_rank::world_size]
@@ -50,18 +53,8 @@ def main(
         except KeyError:
             device = "cuda"
 
-        if model_type in ['kullm3', 'gemma']:
-            # system-prompted kullm3, use transformers pipeline
-            model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", attn_implementation='sdpa')
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=device, return_full_text=False,
-                            do_sample=True, top_p=0.9, temperature=0.7)
-            for e in tqdm(eval_set):
-                messages = [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
-                inputs = tokenizer.apply_chat_template(messages, tokenize=False)
-                generated_answers.append(pipe(inputs, max_new_tokens=2048)[0]['generated_text'])
-                print(generated_answers[-1])
-        else:
+        # This models need special generation strategy
+        if model_type in ['solar', 'mistral', 'kullm', 'koalpaca_v1_1b', 'hyundai_llm']:
             # There exists more simple way, but let us move fast.
             # model, tokenizer load
             try:
@@ -81,12 +74,6 @@ def main(
                 input_texts = [f"{e['instruction']}\n\n{e['instances'][0]['input']}" for e in eval_set]
                 input_template_texts = [tokenizer.apply_chat_template(
                     [{"role": "user", "content": t}], tokenize=False, add_generation_prompt=True) for t in input_texts]
-                if model_type == 'solar':
-                    split_criterion = "### Assistant:\n"
-                elif model_type == 'mistral':
-                    split_criterion = "[/INST]"
-                else:
-                    raise NotImplementedError
 
             elif model_type in ['kullm', 'koalpaca_v1_1b', 'hyundai_llm']:
                 # for generate
@@ -107,7 +94,6 @@ def main(
                             'instruction': e['instruction'],
                         })
                     input_template_texts.append(input_text)
-                split_criterion = template['response_split']
             else:
                 raise NotImplementedError
 
@@ -127,27 +113,27 @@ def main(
                     top_p=0.9,
                     temperature=0.7
                 )
-                # answer = tokenizer.decode(res[0], skip_special_tokens=True)
                 try:
                     model_answer = tokenizer.decode(res[0][len(item[0]):], skip_special_tokens=True)
                 except IndexError:
                     print("model generate nothing!! Full model answer:")
-                    # print(model_answer)
                     model_answer = "(no answer from model)"  # Some models rarely generate nothing.
-                # try:
-                #     if model_type in ['kullm', 'koalpaca_v1_1b', 'solar']:
-                #         model_answer = answer.split(split_criterion, 1)[1]
-                #     elif model_type in ['mistral']:
-                #         model_answer = answer.rsplit(split_criterion, 1)[1]
-                #     elif model_type in ['hyundai_llm']:
-                #         model_answer = answer
-                #     else:
-                #         raise NotImplementedError
-                # except IndexError:
 
                 generated_answers.append(model_answer)
                 if debug:
                     print(model_answer)
+        else:
+            print(f"model_type: {model_type}, use default chat template.")
+            model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", attn_implementation='sdpa')
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+            pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=device, return_full_text=False,
+                            do_sample=True, top_p=0.9, temperature=0.7)
+            for e in tqdm(eval_set):
+                messages = [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
+                inputs = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                generated_answers.append(pipe(inputs, max_new_tokens=2048)[0]['generated_text'])
+                print(generated_answers[-1])
+
 
     # saving results
     # zip instruction, input, answer
