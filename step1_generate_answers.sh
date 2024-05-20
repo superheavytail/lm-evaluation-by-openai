@@ -8,13 +8,13 @@
 #--debug False
 
 # KULLM3
-# python step1_generate_answers.py \
-# --model_name nlpai-lab/KULLM3 \
-# --save_name kullm3 \
-# --eval_set_path res/user_oriented_instructions_eval.jsonl \
-# --output_dir ./generated/ \
-# --model_type kullm3 \
-# --debug False
+python step1_generate_answers.py \
+--model_name nlpai-lab/KULLM3 \
+--save_name kullm3_test \
+--eval_set_path res/user_oriented_instructions_eval.jsonl \
+--output_dir ./generated/ \
+--model_type kullm3 \
+--debug False
 
 # solar instruct
 #python step1_generate_answers.py \

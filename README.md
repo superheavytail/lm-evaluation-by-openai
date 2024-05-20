@@ -44,7 +44,7 @@ sh step2_evaluate_by_chatgpt.sh
 you can skip the step 1 and rewrite the ```step2_evaluate_by_chatgpt.sh``` to disable the ```--use_api``` options!
 
 ### Supported Models
-- nlpai-lab/kullm-v3 (not yet released)
+- nlpai-lab/KULLM3
 - nlpai-lab/kullm-polyglot-12.8b-v2
 - upstage/SOLAR-10.7B-Instruct-v1.0
 - mistralai/Mistral-7B-Instruct-v0.2 (excluded since it generates English even though given Korean prompt)
