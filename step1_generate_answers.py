@@ -6,7 +6,6 @@ import json
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from tqdm import tqdm
-from setproctitle import setproctitle
 from batched_chatgpt import call_chatgpt
 import torch
 
@@ -19,7 +18,6 @@ def main(
     model_type,
     debug: bool = False
 ):
-    setproctitle("potatowook")
     # check if save path is safe
     save_path = Path(output_dir) / save_name
     save_path = save_path.with_suffix(".jsonl")
