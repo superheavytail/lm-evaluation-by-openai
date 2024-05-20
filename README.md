@@ -94,6 +94,8 @@ Evaluation Form (scores ONLY):
 ```
 
 # Requirements
+- torch
+- transformers
 - [batched-chatgpt](https://github.com/superheavytail/batched-chatgpt)
 - fire
 - jsonlines
