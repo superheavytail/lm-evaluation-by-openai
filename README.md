@@ -98,5 +98,5 @@ Evaluation Form (scores ONLY):
 - fire
 - jsonlines
 ```bash
-pip install batched-chatgpt fire jsonlines
+pip install torch transformers batched-chatgpt fire jsonlines
 ```
