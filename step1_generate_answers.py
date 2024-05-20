@@ -127,7 +127,7 @@ def main(
             model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", attn_implementation='sdpa')
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=device, return_full_text=False,
-                            do_sample=True, top_p=0.9, temperature=0.7)
+                            do_sample=True, top_p=0.9, temperature=0.7, use_cache=True)
             for e in tqdm(eval_set):
                 messages = [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
                 inputs = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
