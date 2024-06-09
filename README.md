@@ -7,6 +7,7 @@ ChatGPT evaluates the model's Korean conversation skills!
 Modify the ```oneclick_step1_step2.sh``` and execute it.  
 - It automatically performs step1 and step2, with ChatGPT API usage.  
 - It uses about 126K tokens with GPT4-Turbo roughly. (252 API call, with each 500 tokens)
+- (2024.06.09.) Now it uses gpt-4o API. But results in README.md is still based on GPT4-Turbo.
 - It uses ChatGPT API so it requires ```export OPENAI_API_KEY=<your_api_key>``` in bash.
 ```
 sh oneclick_step1_step2.sh

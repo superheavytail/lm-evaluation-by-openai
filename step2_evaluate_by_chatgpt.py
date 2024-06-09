@@ -15,7 +15,7 @@ BLUE = '\033[94m'
 BOLD = '\033[1m'
 END = '\033[0m'
 
-CHATGPT_MODEL_NAME = "gpt-4-0125-preview"
+CHATGPT_MODEL_NAME = "gpt-4o-2024-05-13"
 
 
 # test function
