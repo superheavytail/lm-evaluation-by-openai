@@ -1,4 +1,5 @@
 from pathlib import Path
+from itertools import chain
 import os
 import fire
 import jsonlines
@@ -10,10 +11,16 @@ from batched_chatgpt import call_chatgpt
 import torch
 
 
+eval_category_path = {
+    "chat": "res/user_oriented_instructions_eval.jsonl",
+    "hallucination": "res/hallci_crafted.json"
+}
+
+
 def main(
     model_name,
     save_name,
-    eval_set_path,
+    eval_category,
     output_dir,
     model_type,
     debug: bool = False
@@ -30,12 +37,22 @@ def main(
     print(os.getcwd())
 
     # prepare evaluation set
-    eval_set = [e for e in jsonlines.open(eval_set_path).iter()]
+    # It can be refactored to have more readability, but move fast.
+    eval_set_path = eval_category_path[eval_category]
+    if eval_category == 'chat':
+        eval_set = [e for e in jsonlines.open(eval_set_path).iter()]
+    elif eval_category == 'hallucination':
+        with open(eval_set_path, 'rt', encoding='utf-8') as f:
+            eval_set = json.load(f)
+        eval_set = [e['question'] for e in chain(*eval_set.values())]
+    else:
+        raise ValueError
     eval_set = eval_set[:12] if debug else eval_set
 
     generated_answers = []
 
     if model_type == 'openai':
+        # TODO currently this 'if' block cannot deal with 'hallucination' category
         input_texts = [f"{e['instruction']}\n\n{e['instances'][0]['input']}" for e in eval_set]
         generated_answers = call_chatgpt(input_texts, chunk_size=20, model_name=model_name)
     else:
@@ -53,6 +70,7 @@ def main(
 
         # This models need special generation strategy
         if model_type in ['solar', 'mistral', 'kullm', 'koalpaca_v1_1b', 'hyundai_llm']:
+            # TODO currently this 'if' block cannot deal with 'hallucination' category
             # There exists more simple way, but let us move fast.
             # model, tokenizer load
             try:
@@ -119,11 +137,24 @@ def main(
                 if debug:
                     print(model_answer)
         else:
+            # Prepare model, tokenizer, HF pipeline
             print(f"model_type: {model_type}, use default chat template.")
             model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", attn_implementation='sdpa')
             tokenizer = AutoTokenizer.from_pretrained(model_name)
             pipe = pipeline("text-generation", model=model, tokenizer=tokenizer, device=device, return_full_text=False,
                             do_sample=False, use_cache=True)
+
+            # Prepare data
+            if eval_category == 'chat':
+                eval_set = [
+                    [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
+                    for e in eval_set
+                ]
+            elif eval_category == 'hallucination':
+                eval_set = [
+                    [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
+                    for e in eval_set
+                ]
             for e in tqdm(eval_set):
                 messages = [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
                 inputs = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)

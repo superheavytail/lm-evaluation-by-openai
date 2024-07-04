@@ -9,7 +9,7 @@ MODEL_PATH=/your/model/path
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 step1_generate_answers.py \
 --model_name $MODEL_PATH \
 --save_name $SAVE_NAME \
---eval_set_path res/user_oriented_instructions_eval.jsonl \
+--eval_category chat \
 --output_dir ./generated/ \
 --model_type gemma \
 --debug False
