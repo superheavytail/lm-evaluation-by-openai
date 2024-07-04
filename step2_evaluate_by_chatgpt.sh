@@ -41,3 +41,11 @@ python step2_evaluate_by_chatgpt.py \
 --generation_result_path "./generated/gemma_1_1_7b_it.jsonl" \
 --evaluation_result_path "./chatgpt_results/gemma_1_1_7b_it.pkl" \
 # --use_api
+
+# KULLM3 hallucination
+#python step2_evaluate_by_chatgpt.py \
+#--generation_result_path "./generated/kullm3_hallucination.jsonl" \
+#--evaluation_result_path "./chatgpt_results/kullm3_hallucination.pkl" \
+#--eval_set_path "./res/halluci_crafted.json" \
+#--use_api \
+#--num_items_in_one_api_call 8

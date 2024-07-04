@@ -1,7 +1,7 @@
 Your task is to evaluate the responses of an AI model.
 
-You will assess the AI model's 'response' to a given 'question'.
-When doing so, you should judge the AI model's 'response' based on the 'reference'.
+You will assess the AI model's 'Response' to a given 'Question'.
+When doing so, you should judge the AI model's 'Response' based on the 'Reference'.
 The evaluation criteria are as follows:
 
 is_hallucinated (yes/no)
@@ -43,6 +43,7 @@ Provide only the evaluation results without explanations.
 삼국지연의에 '흑뢰성주'라는 술이 등장했다는 사실이 저의 데이터베이스에 존재하지 않습니다.
 확실히 답변드릴 수는 없지만, 소설적 장치일 가능성을 염두에 두는 것이 좋습니다.
 <Example 2 End>
+
 <Example 3>
 [Reference]
 산의 경사에서 공기가 상승하며 냉각되어 생기는 안개를 'upslope fog' 또는 'orographic fog'라고 부르지만, '페스 피아다'는 이와 관련이 없다.
@@ -113,27 +114,4 @@ is_helpful: yes
 
 Instruction: Write the evaluation results below.
 <Evaluation Result>
-[Item 1]
-is_hallucinated:
-is_helpful:
-[Item 2]
-is_hallucinated:
-is_helpful:
-[Item 3]
-is_hallucinated:
-is_helpful:
-[Item 4]
-is_hallucinated:
-is_helpful:
-[Item 5]
-is_hallucinated:
-is_helpful:
-[Item 6]
-is_hallucinated:
-is_helpful:
-[Item 7]
-is_hallucinated:
-is_helpful:
-[Item 8]
-is_hallucinated:
-is_helpful:
+{result_sheets}

@@ -1,9 +1,12 @@
 from pathlib import Path
 from collections import defaultdict
+from itertools import chain
 import fire
 import jsonlines
 import pickle
 import re
+import json
+import time
 import numpy as np
 
 from batched_chatgpt import call_chatgpt
@@ -70,10 +73,10 @@ def parse_chatgpt_answer(s: str):
     return scores
 
 
-def main(
-    generation_result_path: str,
-    evaluation_result_path: str,
-    use_api: bool = False,
+def chat_evaluate(
+        generation_result_path: str,
+        evaluation_result_path: str,
+        use_api: bool = False,
 ):
     # load generation result
     j = jsonlines.open(generation_result_path)
@@ -135,7 +138,7 @@ def main(
     assert len(scores['fluency']) + not_parseable_count == len(evaluation_results)
 
     scores = dict({'fluency ': scores['fluency']}, **scores)  # For beautiful display
-    del(scores['fluency'])
+    del (scores['fluency'])
 
     # Print parsed result
     # scores and abandoned number will be printed
@@ -154,6 +157,182 @@ def main(
         print(f"{key}\t{round(averages[key], 2)}\t{round(stddev[key], 2)}")
         print("-----------------------------------")
     print()
+
+
+def hallucination_evaluate(
+        generation_result_path: str,
+        evaluation_result_path: str,
+        eval_set_path: str,
+        use_api: bool = False,
+        num_items_in_one_api_call: int = 8,
+):
+    # load generation result
+    j = jsonlines.open(generation_result_path)
+    gen_results = [e for e in j.iter()]
+    for key in ['prompt', 'completion']:
+        assert key in gen_results[0].keys()
+
+    # load 'context' data from evaluation data
+    with open(eval_set_path, 'rt', encoding='utf-8') as f:
+        eval_set = json.load(f)
+    contexts = [e['context'] for e in chain(*eval_set.values())]
+
+    # load AI evaluation template
+    with open("evaluation_templates/en_template_for_halluci_eval.txt", 'rt') as f:
+        halluci_template = f.read()
+
+    # Make string chunk, since we're going to evaluate multiple instances in one API call.
+    item_chunks = []
+    tmp_item_chunk = []
+    assert len(gen_results) == len(contexts)
+    for i, (gen_result, context) in enumerate(zip(gen_results, contexts)):
+        question = gen_result['prompt']
+        response = gen_result['completion']
+        remainder = i % num_items_in_one_api_call
+
+        item = (f"<Item {remainder + 1}>\n"
+                f"[Reference]\n"
+                f"{context}\n"
+                f"[Question]\n"
+                f"{question}\n"
+                f"[Response]\n"
+                f"{response}\n"
+                f"<Item {remainder + 1}> End\n")
+        result_sheet = (f"[Item {remainder + 1}]\n"
+                        f"is_hallucinated: \n"
+                        f"is_helpful: \n")
+        tmp_item_chunk.append((item, result_sheet))
+
+        if i % num_items_in_one_api_call == num_items_in_one_api_call - 1 or i == len(gen_results) - 1:
+            item_chunks.append((
+                "\n".join([e[0] for e in tmp_item_chunk]),
+                "".join([e[1] for e in tmp_item_chunk]),
+            ))
+            tmp_item_chunk = []
+
+    # Apply template
+    item_chunks = [halluci_template.format_map({
+        "items_ref_ques_resp": e[0],
+        "result_sheets": e[1],
+    }) for e in item_chunks]
+
+    # Do AI evaluation and save result
+    if use_api:
+        print("Initiating ChatGPT API...")
+        print(f"Current ChatGPT model: {CHATGPT_MODEL_NAME}")
+        print("3...")
+        time.sleep(1)
+        print("2...")
+        time.sleep(1)
+        print("1...")
+        time.sleep(1)
+
+        evaluations = call_chatgpt(
+            item_chunks,
+            system_message="You're an helpful assistant.",
+            model_name=CHATGPT_MODEL_NAME,
+            pkl_path=evaluation_result_path,
+            chunk_size=5,
+            sleep_between_chunk=2,
+            temperature=0
+        )
+    else:
+        with open(evaluation_result_path, 'rb') as f:
+            evaluations = pickle.load(f)['completions']
+
+    # Parse AI response
+    parsed_data = []
+    p1 = r'\[Item\s*(\d+)\]\n+is_hallucinated:\s*(\w+)\n+is_helpful:\s*(\w+)'
+    pattern = re.compile(p1)
+
+    for evaluation in evaluations:
+        matches = pattern.findall(evaluation)
+        parsed_data.extend(
+            [{'Item': int(item), 'is_hallucinated': hallucinated, 'is_helpful': helpful} for
+             item, hallucinated, helpful in matches]
+        )
+
+    if len(parsed_data) == len(contexts):
+        # Collapse by category of hallucination
+        items_by_category = dict.fromkeys(eval_set)
+        cnt = 0
+        for key in eval_set:
+            items_by_category[key] = parsed_data[cnt:cnt + len(eval_set[key])]
+            cnt += len(eval_set[key])
+
+        # Count and score
+        scores = {}
+        total_examples = 0
+        total_hallucinated_count = 0
+        total_helpful_count = 0
+        for key, value in items_by_category.items():
+            hallucinated_count = len([1 for e in value if e['is_hallucinated'] == 'yes'])
+            helpful_count = len([1 for e in value if e['is_helpful'] == 'yes'])
+            scores[key] = {
+                "num_examples": len(value),
+                "hallucinated_count": hallucinated_count,
+                "hallucinated_rate": hallucinated_count / len(value),
+                "helpful_count": helpful_count,
+                "helpful_rate": helpful_count / len(value),
+            }
+            total_examples += len(value)
+            total_hallucinated_count += hallucinated_count
+            total_helpful_count += helpful_count
+        scores['Global Score (Micro averaging)'] = {
+            'num_examples': total_examples,
+            'hallucinated_count': total_hallucinated_count,
+            'hallucinated_rate': total_hallucinated_count / total_examples,
+            'helpful_count': total_helpful_count,
+            'helpful_rate': total_helpful_count / total_examples,
+        }
+
+        # Display the scores
+        print(BLUE + "===================================" + END)
+        print(CYAN + f"  The number of all examples: " + END + f"{len(contexts)}")
+        print(BLUE + "===================================" + END)
+        for key, value in scores.items():
+            print("-------------------------------")
+            print(RED + f"{key}" + END)
+            print("-------------------------------")
+            for k, v in value.items():
+                if k.startswith("halluci"):
+                    if k.endswith("rate"):
+                        print(GREEN + f"{k}\t" + END + f"{round(v, 3)}")
+                    else:
+                        print(CYAN + f"{k}\t" + END + f"{round(v, 3)}")
+                elif k.startswith("helpful"):
+                    if k.endswith("rate"):
+                        print(GREEN + f"{k}\t\t" + END + f"{round(v, 3)}")
+                    else:
+                        print(CYAN + f"{k}\t\t" + END + f"{round(v, 3)}")
+                elif k.startswith("num_examples"):
+                    print(CYAN + f"{k}\t\t" + END + f"{round(v, 3)}")
+                else:
+                    raise ValueError
+    else:
+        print("Cannot parse all ChatGPT's answers correctly!")
+        raise ValueError
+
+
+def main(
+    category: str,
+    generation_result_path: str,
+    evaluation_result_path: str,
+    eval_set_path: str = None,
+    use_api: bool = False,
+    num_items_in_one_api_call: int = 8,
+):
+    if category == "chat":
+        chat_evaluate(generation_result_path, evaluation_result_path, use_api)
+    elif category == 'hallucination':
+        hallucination_evaluate(
+            generation_result_path,
+            evaluation_result_path,
+            eval_set_path, use_api,
+            num_items_in_one_api_call,
+        )
+    else:
+        raise ValueError
 
 
 if __name__ == '__main__':
