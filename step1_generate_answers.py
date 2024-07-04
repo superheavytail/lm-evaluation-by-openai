@@ -8,12 +8,12 @@ import json
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 from tqdm import tqdm
 from batched_chatgpt import call_chatgpt
-import torch
+# import torch
 
 
 eval_category_path = {
     "chat": "res/user_oriented_instructions_eval.jsonl",
-    "hallucination": "res/hallci_crafted.json"
+    "hallucination": "res/halluci_crafted.json"
 }
 
 
@@ -26,6 +26,8 @@ def main(
     debug: bool = False
 ):
     # check if save path is safe
+    if debug:
+        save_name = save_name + "_debug"
     save_path = Path(output_dir) / save_name
     save_path = save_path.with_suffix(".jsonl")
     if save_path.exists():
@@ -47,7 +49,7 @@ def main(
         eval_set = [e['question'] for e in chain(*eval_set.values())]
     else:
         raise ValueError
-    eval_set = eval_set[:12] if debug else eval_set
+    eval_set = eval_set[:3] if debug else eval_set
 
     generated_answers = []
 
@@ -152,12 +154,11 @@ def main(
                 ]
             elif eval_category == 'hallucination':
                 eval_set = [
-                    [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
+                    [{'role': 'user', 'content': e}]
                     for e in eval_set
                 ]
             for e in tqdm(eval_set):
-                messages = [{'role': 'user', 'content': f"{e['instruction']}\n\n{e['instances'][0]['input']}"}]
-                inputs = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                inputs = tokenizer.apply_chat_template(e, tokenize=False, add_generation_prompt=True)
                 generated_answers.append(pipe(inputs, max_new_tokens=2048)[0]['generated_text'])
                 print(generated_answers[-1])
 
@@ -165,24 +166,36 @@ def main(
     # saving results
     # zip instruction, input, answer
     results = []
-    for eval_item, answer in zip(eval_set, generated_answers):
-        results.append({
-            'instruction': eval_item['instruction'],
-            'input': eval_item['instances'][0]['input'],
-            'answer': answer
-        })
 
-    if not debug:
-        with open(save_path, "wt", encoding="utf-8") as f:
-            for result in results:
-                json.dump(result, f, ensure_ascii=False)  # set ensure_ascii False for Korean language
-                f.write("\n")  # since it's jsonl
+    # TODO this 'saving results' part should be modified
+    if eval_category == 'chat':
+        for eval_item, answer in zip(eval_set, generated_answers):
+            results.append({
+                'instruction': eval_item['instruction'],
+                'input': eval_item['instances'][0]['input'],
+                'answer': answer
+            })
+    elif eval_category == 'hallucination':
+        for eval_item, answer in zip(eval_set, generated_answers):
+            results.append({
+                'prompt': eval_item,
+                'completion': answer
+            })
+
+    print("saving result...")
+    with open(save_path, "wt", encoding="utf-8") as f:
+        for result in results:
+            json.dump(result, f, ensure_ascii=False)  # set ensure_ascii False for Korean language
+            f.write("\n")  # since it's jsonl
 
     if debug:
-        for result in results:
-            print(f"{result['instruction']=}")
-            print(f"{result['input']=}")
-            print(f"{result['answer']=}")
+        if eval_category == 'chat':
+            for result in results:
+                print(f"{result['instruction']=}")
+                print(f"{result['input']=}")
+                print(f"{result['answer']=}")
+        else:
+            raise NotImplementedError
 
 
 if __name__ == '__main__':

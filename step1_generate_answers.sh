@@ -8,10 +8,19 @@
 #--debug False
 
 # KULLM3
+#python step1_generate_answers.py \
+#--model_name nlpai-lab/KULLM3 \
+#--save_name kullm3 \
+#--eval_category chat \
+#--output_dir ./generated/ \
+#--model_type kullm3 \
+#--debug False
+
+# KULLM3 halluci
 python step1_generate_answers.py \
 --model_name nlpai-lab/KULLM3 \
---save_name kullm3_test \
---eval_set_path res/user_oriented_instructions_eval.jsonl \
+--save_name kullm3_hallucination \
+--eval_category hallucination \
 --output_dir ./generated/ \
 --model_type kullm3 \
 --debug False
