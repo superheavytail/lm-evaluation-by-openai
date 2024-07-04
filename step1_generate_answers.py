@@ -54,9 +54,13 @@ def main(
     generated_answers = []
 
     if model_type == 'openai':
-        # TODO currently this 'if' block cannot deal with 'hallucination' category
-        input_texts = [f"{e['instruction']}\n\n{e['instances'][0]['input']}" for e in eval_set]
-        generated_answers = call_chatgpt(input_texts, chunk_size=20, model_name=model_name)
+        if eval_category == 'chat':
+            input_texts = [f"{e['instruction']}\n\n{e['instances'][0]['input']}" for e in eval_set]
+        elif eval_category == 'hallucination':
+            input_texts = eval_set
+        else:
+            raise NotImplementedError
+        generated_answers = call_chatgpt(input_texts, chunk_size=20, model_name=model_name, temperature=0)
     else:
         # for multi-GPU inference
         try:
