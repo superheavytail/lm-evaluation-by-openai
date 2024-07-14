@@ -81,43 +81,40 @@ def chat_evaluate(
     # load generation result
     j = jsonlines.open(generation_result_path)
     gen_results = [e for e in j.iter()]
-    for key in ['instruction', 'input', 'answer']:
+    for key in ['prompt', 'completion']:
         assert key in gen_results[0].keys()
 
     # load AI evaluation template
-    with open("evaluation_templates/en_template_for_llm_eval_input.txt", 'rt') as f:
-        template_with_input = f.read()
-    with open("evaluation_templates/en_template_for_llm_eval_noinput.txt", 'rt') as f:
-        template_with_noinput = f.read()
+    with open("evaluation_templates/en_template_for_chat_eval.txt", 'rt') as f:
+        template = f.read()
 
     # Apply template
     chatgpt_inputs = []
     for gen in gen_results:
-        if gen['input']:
-            chatgpt_inputs.append(template_with_input.format_map({
-                'instruction': gen['instruction'],
-                'input': gen['input'],
-                'response': gen['answer']
-            }))
-        else:
-            chatgpt_inputs.append(template_with_noinput.format_map({
-                'instruction': gen['instruction'],
-                'response': gen['answer']
-            }))
+        chatgpt_inputs.append(template.format_map({
+            'instruction': gen['prompt'],
+            'response': gen['completion']
+        }))
 
     # Do AI evaluation and save result
     if use_api:
         print(f"Current ChatGPT model: {CHATGPT_MODEL_NAME}")
-        evaluation_results = call_chatgpt(
+        _ = call_chatgpt(
             chatgpt_inputs,
             system_message="You're a helpful assistant and a Korean language expert.",
             model_name=CHATGPT_MODEL_NAME,
             pkl_path=evaluation_result_path,
-            chunk_size=20
+            chunk_size=20,
+            temperature=0,
+            sleep_between_chunk=0,
         )
-    else:
-        with open(evaluation_result_path, 'rb') as f:
-            evaluation_results = pickle.load(f)
+    with open(evaluation_result_path, 'rb') as f:
+        evaluation_results = pickle.load(f)
+    try:
+        evaluation_results = evaluation_results['completions']
+    except KeyError:
+        print("Check the version of " + RED + "batched-chatgpt" + END + ", which must be >= 1.0.0")
+        raise KeyError
 
     # Parse AI response
     not_parseable_count = 0
@@ -315,16 +312,16 @@ def hallucination_evaluate(
 
 
 def main(
-    category: str,
+    eval_category: str,
     generation_result_path: str,
     evaluation_result_path: str,
     eval_set_path: str = None,
     use_api: bool = False,
     num_items_in_one_api_call: int = 8,
 ):
-    if category == "chat":
+    if eval_category == "chat":
         chat_evaluate(generation_result_path, evaluation_result_path, use_api)
-    elif category == 'hallucination':
+    elif eval_category == 'hallucination':
         hallucination_evaluate(
             generation_result_path,
             evaluation_result_path,
