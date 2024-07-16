@@ -75,7 +75,7 @@ def main(
             local_rank = None  # for print_ function
 
         # This models need special generation strategy
-        if model_type in ['solar', 'mistral', 'kullm_v2', 'koalpaca_v1_1b', 'hyundai_llm']:
+        if model_type in ['solar', 'mistral', 'kullm_v2', 'koalpaca_v1_1b']:
             # TODO currently this 'if' block cannot deal with 'hallucination' category
             # There exists more simple way, but let us move fast.
             # model, tokenizer load
@@ -96,7 +96,7 @@ def main(
                 input_template_texts = [tokenizer.apply_chat_template(
                     [{"role": "user", "content": t}], tokenize=False, add_generation_prompt=True) for t in eval_set]
 
-            elif model_type in ['kullm_v2', 'koalpaca_v1_1b', 'hyundai_llm']:
+            elif model_type in ['kullm_v2', 'koalpaca_v1_1b']:
                 # for generate
                 model.config.pad_token_id = model.config.eos_token_id
 
@@ -132,10 +132,11 @@ def main(
                     print("model generate nothing!! Full model answer:")
                     model_answer = "(no answer from model)"  # Some models rarely generate nothing.
 
+                print(model_answer)
                 generated_answers.append(model_answer)
                 if debug:
                     print(model_answer)
-        else:
+        elif model_type == 'model_with_default_chat_template':
             # Prepare model, tokenizer, HF pipeline
             print_(f"model_type: {model_type}", local_rank=local_rank)
             print_(RED + "Using model's default chat template..." + END, local_rank=local_rank)
@@ -154,6 +155,10 @@ def main(
                 inputs = tokenizer.apply_chat_template(e, tokenize=False, add_generation_prompt=True)
                 generated_answers.append(pipe(inputs, max_new_tokens=2048)[0]['generated_text'])
                 print(generated_answers[-1])
+        else:
+            raise ValueError(
+                "model type should be in:\n" + GREEN + "'openai'\n'solar'\n'mistral'\n'kullm_v2'"
+                "\n'koalpaca_v1_1b'\n'model_with_default_chat_template'")
 
     # saving results
     # zip instruction, input, answer

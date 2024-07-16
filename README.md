@@ -2,59 +2,71 @@
 모델의 한국어 대화 능력을 ChatGPT가 평가합니다!  
 ChatGPT evaluates the model's Korean conversation skills!
 
+### Update Log
+- 2024-07-16: 1) Improved evaluation prompts. 2) Add hallucination-evaluation (BETA) function
+  - Removed URL-asking prompts
+  - Corrected the unnatural instructions.
+  - Substitute the evaluator GPT from GPT4 turbo to GPT4o.
+  - Re-evaluated 6 models, added KULLM3-20240604 (which is not released)
+
 
 ## How to evaluate your model
 Modify the ```oneclick_step1_step2.sh``` and execute it.  
-- It automatically performs step1 and step2, with ChatGPT API usage.  
-- It uses about 126K tokens with GPT4-Turbo roughly. (252 API call, with each 500 tokens)
-- (2024.06.09.) Now it uses gpt-4o API. But results in README.md is still based on GPT4-Turbo.
-- It uses ChatGPT API so it requires ```export OPENAI_API_KEY=<your_api_key>``` in bash.
+- It automatically performs step1(generate), and step2(evaluation) with ChatGPT API usage.  
+- It uses about 252 API call, with each 500 tokens.
+- It uses ChatGPT API, so it requires ```export OPENAI_API_KEY=<your_api_key>``` in bash.
 ```
 sh oneclick_step1_step2.sh
 ```
 
-## Evaluation Results
+## Evaluation Results 1 (instruction-following ability)
 - [mistralai/Mistral-7B-Instruct-v0.2](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2) model is omitted because it frequently generates responses in English, even when the input is provided in Korean.
 - [upstage/SOLAR-10.7B-Instruct-v1.0](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0) model sometimes do similarly, therefore, its coherence score is relatively low.
+- Since GPT4o evaluates itself, the likelihood of it achieving a high score is relatively high. 
 
-| Type   | Model                                                                        | Fluency (0 - 5) | Coherence (1 - 5) | Accuracy (1 - 5) | Completeness (1 - 5) | Overall Quality (0-5) | 
-|--------|------------------------------------------------------------------------------|:---------------:|:-----------------:|:----------------:|:--------------------:|:---------------------:| 
-| Closed | GPT-4-Turbo                                                                  |      4.97       |       4.94        |       4.74       |         4.69         |         4.80          | 
-| Closed | GPT-3.5-Turbo                                                                |      4.93       |       4.88        |       4.33       |         4.12         |         4.43          |
-|        |                                                                              |                 |                   |                  |                      |                       |
-| Open   | [KULLM3](https://huggingface.co/nlpai-lab/KULLM3)                            |    **4.83**     |      **4.78**      |     **4.17**     |       **4.23**       |       **4.36**        | 
-| Open   | [SOLAR-10.7B-Inst](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0) |      4.24       |       3.04        |       3.71       |         3.77         |         3.32          |
-| Open   | [KULLM-v2](https://github.com/nlpai-lab/KULLM)                               |      3.70       |       3.25        |       2.82       |         2.48         |         2.80          |
-| Open   | [KoAlpaca-1.1b](https://github.com/Beomi/KoAlpaca)                           |      3.90       |       3.25        |       2.60       |         2.37         |         2.67          |
+| Type         | Model                                                                        | Fluency (0 - 5) | Coherence (1 - 5) | Accuracy (1 - 5) | Completeness (1 - 5) | Overall Quality (0-5) | 
+|--------------|------------------------------------------------------------------------------|:---------------:|:-----------------:|:----------------:|:--------------------:|:---------------------:| 
+| Closed       | gpt-4o-2024-05-13                                                            |      4.98       |       4.98        |       4.92       |         4.91         |         4.92          | 
+| Closed       | gpt-3.5-turbo-0125                                                           |      4.93       |       4.92        |       4.63       |         4.62         |         4.69          |
+|              |                                                                              |                 |                   |                  |                      |                       |
+| Not released | KULLM3-20240604                                                              |      4.88       |       4.86        |       4.48       |         4.52         |         4.58          |
+| Open         | [KULLM3](https://huggingface.co/nlpai-lab/KULLM3)                            |    **4.87**     |     **4.83**      |     **4.46**     |       **4.49**       |       **4.54**        | 
+| Open         | [SOLAR-10.7B-Inst](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0) |      3.87       |       3.55        |       3.58       |         3.57         |         3.44          |
+| Open         | [KoAlpaca-1.1b](https://github.com/Beomi/KoAlpaca)                           |      4.08       |       3.60        |       2.75       |         2.69         |         2.85          |
 
 <p align="center">
-  <img src="assets/kullm3_instruction_evaluation.png" />
+  <img src="assets/chat_evaluation.png" />
+</p>
+
+## Evaluation Results 2 (Hallucination-rejecting ability) (BETA)
+- Vertical axis represents hallucination rate. (lower is better)
+- 'Global' category means the micro-average of all other categories.
+
+<p align="center">
+  <img src="assets/halluci_evaluation.png" />
 </p>
 
 ## How to Reproduce
-Edit the contents of the ```*.sh``` files to suit your purpose, and execute!
+### Instruction-following ability evaluation
+- Edit the contents of the ```oneclick_step1_step2.sh``` files to suit your purpose, and execute!
+### Hallucination-rejecting ability evaluation
+- Set ```--eval_category=hallucination``` instead of ```--eval_category=chat```
 
-### step 1
-```
-sh step1_generate_answers.sh
-```
-### step 2
-```
-sh step2_evaluate_by_chatgpt.sh
-```
 **If you want to use pre-generated model answers and ChatGPT evaluations,**  
-you can skip the step 1 and rewrite the ```step2_evaluate_by_chatgpt.sh``` to disable the ```--use_api``` options!
+you can remove 'step1(generate)' part and modify 'step2(api-evaluation)' part in ```oneclick_step1_step2.sh``` to disable the ```--use_api``` options.  
+```--use_api``` option executes ChatGPT API call which auto-saves result.
 
 ### Supported Models
-- nlpai-lab/KULLM3
-- nlpai-lab/kullm-polyglot-12.8b-v2
-- upstage/SOLAR-10.7B-Instruct-v1.0
-- mistralai/Mistral-7B-Instruct-v0.2 (excluded since it generates English even though given Korean prompt)
-- beomi/KoAlpaca-Polyglot-12.8B
+- Model requires specific generate code block
+  - nlpai-lab/kullm-polyglot-12.8b-v2
+  - upstage/SOLAR-10.7B-Instruct-v1.0
+  - mistralai/Mistral-7B-Instruct-v0.2 (excluded in benchmark since it generates English even though given Korean prompt)
+  - beomi/KoAlpaca-Polyglot-12.8B
 - OpenAI Models (gpt-3.5-turbo, gpt-4-turbo)
+- Any other generative models with default chat template (which can do ```tokenizer.apply_chat_template``)
 
 ## Default Evaluation Template
-**Korean evaluation form isn't pretty good, in our experiment result.**  
+**Korean evaluation form wasn't pretty good, in our experiment result.**  
 **So we adopted english form and 'Be Korean language expert' system prompt.**
 ### System Prompt
 ```
