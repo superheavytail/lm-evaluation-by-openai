@@ -112,9 +112,9 @@ def chat_evaluate(
         evaluation_results = pickle.load(f)
     try:
         evaluation_results = evaluation_results['completions']
-    except KeyError:
-        print("Check the version of " + RED + "batched-chatgpt" + END + ", which must be >= 1.0.0")
-        raise KeyError
+    except TypeError:
+        print("Check the version of " + RED + "batched-chatgpt" + END + ", which should be >= 1.0.0")
+        print("We'll ignore and keep running, but unexpected behavior may occur.")
 
     # Parse AI response
     not_parseable_count = 0
