@@ -32,7 +32,7 @@ sh oneclick_step1_step2.sh
 | Not released | KULLM3-20240604                                                              |      4.88       |       4.86        |       4.48       |         4.52         |         4.58          |
 | Open         | [KULLM3](https://huggingface.co/nlpai-lab/KULLM3)                            |    **4.87**     |     **4.83**      |     **4.46**     |       **4.49**       |       **4.54**        | 
 | Open         | [SOLAR-10.7B-Inst](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0) |      3.87       |       3.55        |       3.58       |         3.57         |         3.44          |
-| Open         | [KoAlpaca-1.1b](https://github.com/Beomi/KoAlpaca)                           |      4.08       |       3.60        |       2.75       |         2.69         |         2.85          |
+| Open         | [KoAlpaca-1.1b](https://github.com/Beomi/KoAlpaca)                           |      4.06       |       3.57        |       2.72       |         2.67         |         2.83          |
 
 <p align="center">
   <img src="assets/chat_evaluation.png" />

@@ -31,7 +31,7 @@
 
 
 ######################## EXAMPLE 2: gpt-3.5-turbo-0125 ############
-#SAVE_NAME=chatgpt_3_5
+#SAVE_NAME=gpt_3_5_turbo_0125
 #MODEL_PATH=gpt-3.5-turbo-0125
 #MODEL_TYPE=openai
 #EVAL_CATEGORY=chat
@@ -125,11 +125,11 @@
 
 
 ######################## EXAMPLE 6: KoAlpaca-1.1b ###############
-#SAVE_NAME=KoAlpaca_1_1b
-#MODEL_PATH=beomi/KoAlpaca-Polyglot-12.8B
-#MODEL_TYPE=koalpaca_v1_1b
-#EVAL_CATEGORY=chat
-#
+SAVE_NAME=KoAlpaca_1_1b
+MODEL_PATH=beomi/KoAlpaca-Polyglot-12.8B
+MODEL_TYPE=koalpaca_v1_1b
+EVAL_CATEGORY=chat
+
 #CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 torchrun --nproc_per_node=8 step1_generate_answers.py \
 #--model_name $MODEL_PATH \
 #--save_name $SAVE_NAME \
@@ -140,10 +140,10 @@
 #
 #python aggregate_data_shard.py \
 #--sharded_file_name $SAVE_NAME &&
-#
-#python step2_evaluate_by_chatgpt.py \
-#--generation_result_path "./generated/"$SAVE_NAME".jsonl" \
-#--evaluation_result_path "./chatgpt_results/"$SAVE_NAME".pkl" \
-#--use_api \
-#--eval_category $EVAL_CATEGORY
+
+python step2_evaluate_by_chatgpt.py \
+--generation_result_path "./generated/"$SAVE_NAME".jsonl" \
+--evaluation_result_path "./chatgpt_results/"$SAVE_NAME".pkl" \
+--use_api \
+--eval_category $EVAL_CATEGORY
 #################################################################
