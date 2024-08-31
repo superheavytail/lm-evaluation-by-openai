@@ -26,7 +26,7 @@ sh oneclick_step1_step2.sh
 - [upstage/SOLAR-10.7B-Instruct-v1.0](https://huggingface.co/upstage/SOLAR-10.7B-Instruct-v1.0) model sometimes do similarly, therefore, its coherence score is relatively low.
 - Since GPT4o evaluates itself, the likelihood of it achieving a high score is relatively high. 
 
-| Type         | Model                                                                        | Fluency (0 - 5) | Coherence (1 - 5) | Accuracy (1 - 5) | Completeness (1 - 5) | Overall Quality (0-5) | 
+| Type         | Model                                                                        | Fluency (0 - 5) | Coherence (1 - 5) | Accuracy (1 - 5) | Completeness (1 - 5) | Overall Quality (1 - 5) | 
 |--------------|------------------------------------------------------------------------------|:---------------:|:-----------------:|:----------------:|:--------------------:|:---------------------:| 
 | Closed       | gpt-4o-2024-05-13                                                            |      4.98       |       4.98        |       4.92       |         4.91         |         4.92          | 
 | Closed       | gpt-3.5-turbo-0125                                                           |      4.93       |       4.92        |       4.63       |         4.62         |         4.69          |
